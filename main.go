@@ -41,6 +41,14 @@ const (
 	activitiesView
 	statisticsView
 )
+
+type phase int
+
+const (
+	workPhase phase = iota
+	breakPhase
+)
+
 type model struct {
 	cursor int
 	items  []menuItem
@@ -49,6 +57,14 @@ type model struct {
 	running bool
 	startTime time.Time
 	elapsed time.Duration
+
+	workDuration time.Duration
+	shortBreakDuration time.Duration
+	longBreakDuration time.Duration
+	cyclesBeforeLongBreak int
+	cyclesDone int
+	phase phase
+	remaining time.Duration
 }
 
 type tickMsg time.Time
@@ -92,6 +108,17 @@ func (m model) updateHome(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
             m.startTime = time.Now()
             m.elapsed = 0
             return m, tickCmd() 
+		case "Pomodoro":
+			m.currentView = pomodoroView
+			m.workDuration = 5 * time.Second
+			m.shortBreakDuration = 5 * time.Second
+			m.longBreakDuration = 15 * time.Minute
+			m.cyclesBeforeLongBreak = 4
+			m.cyclesDone = 0
+			m.phase = workPhase
+			m.remaining = m.workDuration
+			m.running = false
+			return m, nil
         }
     }
     return m, nil
@@ -114,14 +141,63 @@ func (m model) updateTracker(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
     return m, nil
 }
 
+func (m model) updatePomodoro(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case " ":
+		if m.running {
+			m.running = false
+		} else {
+			m.running = true
+			return m, tickCmd()
+		}
+	case "right":
+		if m.phase == workPhase {
+			m.cyclesDone++
+			if m.cyclesDone%m.cyclesBeforeLongBreak == 0 {
+				m.remaining = m.longBreakDuration
+			} else {
+				m.remaining = m.shortBreakDuration
+			}
+			m.phase = breakPhase
+		} else {
+			m.remaining = m.workDuration
+			m.phase = workPhase
+		}
+		m.running = false
+	case "esc":
+		m.running = false
+		m.currentView = homeView
+	}
+	return m, nil
+}
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
     
     case tickMsg:
-        if m.running {
+        if m.running && m.currentView == timeTrackerView {
             m.elapsed = time.Since(m.startTime)
             return m, tickCmd()
         }
+		if m.running && m.currentView == pomodoroView {
+			m.remaining -= time.Second
+			if m.remaining <= 0 {
+				m.running = false
+				fmt.Print("\a")
+				if m.phase == workPhase {
+					m.cyclesDone++
+					m.phase = breakPhase
+					if m.cyclesDone%m.cyclesBeforeLongBreak == 0 {
+						m.remaining = m.longBreakDuration
+					} else {
+						m.remaining = m.shortBreakDuration
+					}
+				} else {
+					m.phase = workPhase
+					m.remaining = m.workDuration
+				}
+			}
+			return m, tickCmd()
+		}
         return m, nil
 
     case tea.KeyMsg:
@@ -133,6 +209,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
             return m.updateHome(msg)
         case timeTrackerView:
             return m.updateTracker(msg)
+        case pomodoroView:
+            return m.updatePomodoro(msg)
         }
     }
     return m, nil
@@ -142,6 +220,8 @@ func (m model) View() string {
 	switch m.currentView {
 	case timeTrackerView:
 		return m.viewTracker()
+	case pomodoroView:
+		return m.viewPomodoro()
 	default:
 		return m.viewHome()
 	}
@@ -194,6 +274,38 @@ func (m model) viewTracker() string {
 
 	return b.String()
 }
+
+func (m model) viewPomodoro() string {
+	var b strings.Builder
+	
+	b.WriteString(titleStyle.Render("Pomodoro Timer"))
+	b.WriteString("\n\n")
+	timeStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("212"))
+	b.WriteString(timeStyle.Render(formatDuration(m.remaining)))
+	b.WriteString("\n\n")
+	
+	phaseStr := "Work"
+	if m.phase == breakPhase {
+		phaseStr = "Break"
+	}
+	b.WriteString(normalStyle.Render("Phase: " + phaseStr))
+	b.WriteString("\n")
+	
+	status := "[Running]"
+	if !m.running {
+		status = "[Paused]"
+	}
+	b.WriteString(normalStyle.Render(status))
+	b.WriteString("\n")
+
+	b.WriteString(fmt.Sprintf("Cycles completed: %d\n", m.cyclesDone))
+	
+	b.WriteString(helpStyle.Render("\nspace: pause/resume • esc: stop & back • right: skip phase"))
+	
+	return b.String()
+}	
 
 func formatDuration(d time.Duration) string {
 	h := int(d.Hours())
