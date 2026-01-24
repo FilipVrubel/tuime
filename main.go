@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"tuime/internal/ui"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
@@ -13,4 +14,3 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 	}
 }
-

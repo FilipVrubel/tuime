@@ -10,7 +10,7 @@ import (
 
 func (m Model) startPomodoro() (tea.Model, tea.Cmd) {
 	m.CurrentView = PomodoroView
-	m.WorkDuration = 5 * time.Second // TODO: change to 25 * time.Minute
+	m.WorkDuration = 5 * time.Second       // TODO: change to 25 * time.Minute
 	m.ShortBreakDuration = 5 * time.Second // TODO: change to 5 * time.Minute
 	m.LongBreakDuration = 15 * time.Minute
 	m.CyclesBeforeLongBreak = 4
