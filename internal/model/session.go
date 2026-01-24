@@ -6,14 +6,14 @@ type SessionType string
 
 const (
 	PomodoroSession SessionType = "pomodoro"
-	TrackerSession SessionType = "tracker"
+	TrackerSession  SessionType = "tracker"
 )
 
 type Session struct {
-	ID         int
-	ActivityID *int
-	StartedAt  time.Time
-	EndedAt    time.Time
-	Duration   int // seconds
-	Type       SessionType
+	ID         int         `db:"id"`
+	ActivityID *int        `db:"activity_id"`
+	StartedAt  time.Time   `db:"started_at"`
+	EndedAt    time.Time   `db:"ended_at"`
+	Duration   int         `db:"duration"` // seconds
+	Type       SessionType `db:"type"`
 }

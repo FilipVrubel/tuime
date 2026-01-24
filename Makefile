@@ -1,7 +1,7 @@
 .PHONY: build run test lint fmt clean check
 
 build:
-	go build -o bin/tuime ./...
+	go build -o bin/tuime .
 
 run:
 	go run main.go
