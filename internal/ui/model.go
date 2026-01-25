@@ -3,7 +3,10 @@ package ui
 import (
 	"time"
 
+	"tuime/internal/model"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/jmoiron/sqlx"
 )
 
 type View int
@@ -46,10 +49,21 @@ type Model struct {
 	CyclesDone            int
 	Phase                 Phase
 	Remaining             time.Duration
+
+	// Database
+	DB *sqlx.DB
+
+	// Activities state
+	activities       []model.Activity
+	selectedActivity int
+	inputMode        bool
+	inputValue       string
+	errorMsg         string
 }
 
-func NewModel() Model {
+func NewModel(db *sqlx.DB) Model {
 	return Model{
+		DB: db,
 		Items: []MenuItem{
 			{Title: "Pomodoro", Desc: "Start a focused work session"},
 			{Title: "Time Tracker", Desc: "Track time manually"},
@@ -89,6 +103,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateTracker(msg)
 		case PomodoroView:
 			return m.updatePomodoro(msg)
+		case ActivitiesView:
+			return m.updateActivities(msg)
+		}
+
+	default:
+		if m.CurrentView == ActivitiesView {
+			return m.updateActivities(msg)
 		}
 	}
 	return m, nil
@@ -100,6 +121,8 @@ func (m Model) View() string {
 		return m.viewTracker()
 	case PomodoroView:
 		return m.viewPomodoro()
+	case ActivitiesView:
+		return m.viewActivities()
 	default:
 		return m.viewHome()
 	}
