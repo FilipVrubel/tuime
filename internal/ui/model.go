@@ -44,13 +44,15 @@ type Model struct {
 	trackerActivityCursor      int
 
 	// Pomodoro state
-	WorkDuration          time.Duration
-	ShortBreakDuration    time.Duration
-	LongBreakDuration     time.Duration
-	CyclesBeforeLongBreak int
-	CyclesDone            int
-	Phase                 Phase
-	Remaining             time.Duration
+	WorkDuration             time.Duration
+	ShortBreakDuration       time.Duration
+	LongBreakDuration        time.Duration
+	CyclesBeforeLongBreak    int
+	CyclesDone               int
+	Phase                    Phase
+	Remaining                time.Duration
+	pomodoroSelectingActivity bool
+	pomodoroActivityCursor    int
 
 	// Session tracking state
 	currentSessionID           *int

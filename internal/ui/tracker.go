@@ -4,10 +4,11 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/jmoiron/sqlx"
 	"tuime/internal/db"
 	"tuime/internal/model"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/jmoiron/sqlx"
 )
 
 type sessionSavedMsg struct {
