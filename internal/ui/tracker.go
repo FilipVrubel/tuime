@@ -4,30 +4,10 @@ import (
 	"strings"
 	"time"
 
-	"tuime/internal/db"
 	"tuime/internal/model"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/jmoiron/sqlx"
 )
-
-type sessionSavedMsg struct {
-	session *model.Session
-}
-
-type sessionSaveErrorMsg struct {
-	err error
-}
-
-func saveSessionCmd(database *sqlx.DB, session *model.Session) tea.Cmd {
-	return func() tea.Msg {
-		savedSession, err := db.CreateSession(database, session)
-		if err != nil {
-			return sessionSaveErrorMsg{err: err}
-		}
-		return sessionSavedMsg{session: savedSession}
-	}
-}
 
 func (m Model) startTracker() (tea.Model, tea.Cmd) {
 	m.CurrentView = TimeTrackerView

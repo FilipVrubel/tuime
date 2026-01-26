@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"tuime/internal/model"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -30,6 +32,28 @@ func (m Model) startPomodoroWithActivity() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m *Model) saveWorkSession() tea.Cmd {
+	if m.Phase != WorkPhase {
+		return nil
+	}
+	
+	activeWorkTime := m.WorkDuration - m.Remaining
+	if activeWorkTime <= 0 {
+		return nil
+	}
+	
+	endedAt := m.sessionStartedAt.Add(activeWorkTime)
+	duration := int(activeWorkTime.Seconds())
+	session := &model.Session{
+		ActivityID:  m.selectedActivityForSession,
+		StartedAt:   m.sessionStartedAt,
+		EndedAt:     endedAt,
+		Duration:    duration,
+		Type:        model.PomodoroSession,
+	}
+	return saveSessionCmd(m.DB, session)
+}
+
 func (m Model) updatePomodoro(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case activitiesLoadedMsg:
@@ -37,6 +61,12 @@ func (m Model) updatePomodoro(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.pomodoroActivityCursor >= len(m.activities)+1 {
 			m.pomodoroActivityCursor = 0
 		}
+		return m, nil
+	
+	case sessionSavedMsg:
+		return m, nil
+	
+	case sessionSaveErrorMsg:
 		return m, nil
 
 	case tea.KeyMsg:
@@ -75,18 +105,36 @@ func (m Model) updatePomodoro(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, TickCmd()
 			}
 		case "right":
-			m.transitionPhase()
+			cmd := m.transitionPhase()
 			m.Running = false
+			return m, cmd
 		case "esc":
+			cmd := m.saveWorkSession()
 			m.Running = false
 			m.CurrentView = HomeView
+			return m, cmd
 		}
 	}
 	return m, nil
 }
 
-func (m *Model) transitionPhase() {
+func (m *Model) transitionPhase() tea.Cmd {
+	var cmd tea.Cmd
 	if m.Phase == WorkPhase {
+		activeWorkTime := m.WorkDuration - m.Remaining
+		if activeWorkTime > 0 {
+			endedAt := m.sessionStartedAt.Add(activeWorkTime)
+			duration := int(activeWorkTime.Seconds())
+			session := &model.Session{
+				ActivityID:  m.selectedActivityForSession,
+				StartedAt:   m.sessionStartedAt,
+				EndedAt:     endedAt,
+				Duration:    duration,
+				Type:        model.PomodoroSession,
+			}
+			cmd = saveSessionCmd(m.DB, session)
+		}
+		
 		m.CyclesDone++
 		m.Phase = BreakPhase
 		if m.CyclesDone%m.CyclesBeforeLongBreak == 0 {
@@ -97,7 +145,9 @@ func (m *Model) transitionPhase() {
 	} else {
 		m.Phase = WorkPhase
 		m.Remaining = m.WorkDuration
+		m.sessionStartedAt = time.Now()
 	}
+	return cmd
 }
 
 func (m Model) tickPomodoro() (tea.Model, tea.Cmd) {
@@ -105,7 +155,8 @@ func (m Model) tickPomodoro() (tea.Model, tea.Cmd) {
 	if m.Remaining <= 0 {
 		m.Running = false
 		fmt.Print("\a")
-		m.transitionPhase()
+		cmd := m.transitionPhase()
+		return m, cmd
 	}
 	return m, TickCmd()
 }
