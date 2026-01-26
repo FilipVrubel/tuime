@@ -37,9 +37,11 @@ type Model struct {
 	CurrentView View
 
 	// Tracker state
-	Running   bool
-	StartTime time.Time
-	Elapsed   time.Duration
+	Running                    bool
+	StartTime                  time.Time
+	Elapsed                    time.Duration
+	trackerSelectingActivity   bool
+	trackerActivityCursor      int
 
 	// Pomodoro state
 	WorkDuration          time.Duration
@@ -49,6 +51,11 @@ type Model struct {
 	CyclesDone            int
 	Phase                 Phase
 	Remaining             time.Duration
+
+	// Session tracking state
+	currentSessionID           *int
+	sessionStartedAt           time.Time
+	selectedActivityForSession *int
 
 	// Database
 	DB *sqlx.DB
@@ -110,6 +117,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 		if m.CurrentView == ActivitiesView {
 			return m.updateActivities(msg)
+		}
+		if m.CurrentView == TimeTrackerView {
+			return m.updateTracker(msg)
+		}
+		if m.CurrentView == PomodoroView {
+			return m.updatePomodoro(msg)
 		}
 	}
 	return m, nil

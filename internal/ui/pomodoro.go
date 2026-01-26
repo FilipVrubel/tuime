@@ -21,21 +21,24 @@ func (m Model) startPomodoro() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) updatePomodoro(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case " ":
-		if m.Running {
+func (m Model) updatePomodoro(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case " ":
+			if m.Running {
+				m.Running = false
+			} else {
+				m.Running = true
+				return m, TickCmd()
+			}
+		case "right":
+			m.transitionPhase()
 			m.Running = false
-		} else {
-			m.Running = true
-			return m, TickCmd()
+		case "esc":
+			m.Running = false
+			m.CurrentView = HomeView
 		}
-	case "right":
-		m.transitionPhase()
-		m.Running = false
-	case "esc":
-		m.Running = false
-		m.CurrentView = HomeView
 	}
 	return m, nil
 }
