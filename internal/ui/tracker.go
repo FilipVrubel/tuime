@@ -5,7 +5,28 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/jmoiron/sqlx"
+	"tuime/internal/db"
+	"tuime/internal/model"
 )
+
+type sessionSavedMsg struct {
+	session *model.Session
+}
+
+type sessionSaveErrorMsg struct {
+	err error
+}
+
+func saveSessionCmd(database *sqlx.DB, session *model.Session) tea.Cmd {
+	return func() tea.Msg {
+		savedSession, err := db.CreateSession(database, session)
+		if err != nil {
+			return sessionSaveErrorMsg{err: err}
+		}
+		return sessionSavedMsg{session: savedSession}
+	}
+}
 
 func (m Model) startTracker() (tea.Model, tea.Cmd) {
 	m.CurrentView = TimeTrackerView
@@ -31,6 +52,13 @@ func (m Model) updateTracker(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.trackerActivityCursor >= len(m.activities)+1 {
 			m.trackerActivityCursor = 0
 		}
+		return m, nil
+
+	case sessionSavedMsg:
+		return m, nil
+
+	case sessionSaveErrorMsg:
+		m.errorMsg = msg.err.Error()
 		return m, nil
 
 	case tea.KeyMsg:
@@ -69,9 +97,29 @@ func (m Model) updateTracker(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Running = true
 				return m, TickCmd()
 			}
+		case "enter":
+			if m.Running || m.Elapsed > 0 {
+				endTime := time.Now()
+				durationSeconds := int(m.Elapsed.Seconds())
+				
+				session := &model.Session{
+					ActivityID: m.selectedActivityForSession,
+					StartedAt:  m.sessionStartedAt,
+					EndedAt:    endTime,
+					Duration:   durationSeconds,
+					Type:       model.TrackerSession,
+				}
+				
+				m.Running = false
+				m.CurrentView = HomeView
+				m.Elapsed = 0
+				return m, saveSessionCmd(m.DB, session)
+			}
+			m.CurrentView = HomeView
 		case "esc":
 			m.Running = false
 			m.CurrentView = HomeView
+			m.Elapsed = 0
 		}
 	}
 	return m, nil
@@ -122,7 +170,7 @@ func (m Model) viewTracker() string {
 		b.WriteString(NormalStyle.Render(status))
 		b.WriteString("\n")
 
-		b.WriteString(HelpStyle.Render("\nspace: pause/resume • esc: stop & back"))
+		b.WriteString(HelpStyle.Render("\nspace: pause/resume • enter: save & back • esc: cancel"))
 	}
 
 	return b.String()
