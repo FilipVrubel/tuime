@@ -3,9 +3,11 @@ package ui
 import (
 	"time"
 
+	"tuime/internal/config"
 	"tuime/internal/db"
 	"tuime/internal/model"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/jmoiron/sqlx"
 )
@@ -18,6 +20,7 @@ const (
 	TimeTrackerView
 	ActivitiesView
 	StatisticsView
+	ConfigView
 )
 
 type Phase int
@@ -62,6 +65,11 @@ type Model struct {
 	// Database
 	DB *sqlx.DB
 
+	// Configuration
+	Config         *config.Config
+	configCursor   int
+	configInputs   []textinput.Model
+
 	// Activities state
 	activities       []model.Activity
 	selectedActivity int
@@ -78,14 +86,16 @@ type Model struct {
 	dailyStats       []db.DailySessionStats
 }
 
-func NewModel(db *sqlx.DB) Model {
+func NewModel(db *sqlx.DB, cfg *config.Config) Model {
 	return Model{
-		DB: db,
+		DB:     db,
+		Config: cfg,
 		Items: []MenuItem{
 			{Title: "Pomodoro", Desc: "Start a focused work session"},
 			{Title: "Time Tracker", Desc: "Track time manually"},
 			{Title: "Activities", Desc: "Manage activity types"},
 			{Title: "Statistics", Desc: "View your progress"},
+			{Title: "Configuration", Desc: "Customize settings"},
 			{Title: "Quit", Desc: "Exit the application"},
 		},
 		CurrentView: HomeView,
@@ -124,6 +134,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateActivities(msg)
 		case StatisticsView:
 			return m.updateStatistics(msg)
+		case ConfigView:
+			return m.updateConfig(msg)
 		}
 
 	default:
@@ -153,6 +165,8 @@ func (m Model) View() string {
 		return m.viewActivities()
 	case StatisticsView:
 		return m.viewStatistics()
+	case ConfigView:
+		return m.viewConfig()
 	default:
 		return m.viewHome()
 	}

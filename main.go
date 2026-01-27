@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"tuime/internal/config"
 	"tuime/internal/db"
 	"tuime/internal/ui"
 
@@ -32,7 +33,13 @@ func main() {
 		panic(err)
 	}
 
-	p := tea.NewProgram(ui.NewModel(database), tea.WithAltScreen())
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Printf("Warning: Could not load config: %v. Using defaults.\n", err)
+		cfg = config.DefaultConfig()
+	}
+
+	p := tea.NewProgram(ui.NewModel(database, cfg), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}

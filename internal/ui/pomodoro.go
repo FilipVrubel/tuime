@@ -20,10 +20,10 @@ func (m Model) startPomodoro() (tea.Model, tea.Cmd) {
 
 func (m Model) startPomodoroWithActivity() (tea.Model, tea.Cmd) {
 	m.pomodoroSelectingActivity = false
-	m.WorkDuration = 5 * time.Minute
-	m.ShortBreakDuration = 5 * time.Minute
-	m.LongBreakDuration = 15 * time.Minute
-	m.CyclesBeforeLongBreak = 4
+	m.WorkDuration = m.Config.WorkDurationTime()
+	m.ShortBreakDuration = m.Config.ShortBreakDurationTime()
+	m.LongBreakDuration = m.Config.LongBreakDurationTime()
+	m.CyclesBeforeLongBreak = m.Config.CyclesBeforeLongBreak
 	m.CyclesDone = 0
 	m.Phase = WorkPhase
 	m.Remaining = m.WorkDuration

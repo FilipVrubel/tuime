@@ -31,6 +31,9 @@ func (m Model) updateHome(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m.startActivities()
 		case "Statistics":
 			return m.startStatistics()
+		case "Configuration":
+			m.startConfig()
+			return m, nil
 		}
 	}
 	return m, nil
