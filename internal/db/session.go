@@ -155,3 +155,130 @@ func GetSessionsByDateRange(db *sqlx.DB, startDate, endDate time.Time) ([]model.
 	}
 	return sessions, nil
 }
+
+type ActivityStats struct {
+	ActivityID   *int   `db:"activity_id"`
+	ActivityName string `db:"activity_name"`
+	TotalTime    int    `db:"total_time"`
+	SessionCount int    `db:"session_count"`
+}
+
+func GetActivityStats(db *sqlx.DB, startDate, endDate *time.Time) ([]ActivityStats, error) {
+	query := `
+		SELECT 
+			s.activity_id,
+			COALESCE(a.name, 'No Activity') as activity_name,
+			SUM(s.duration) as total_time,
+			COUNT(s.id) as session_count
+		FROM sessions s
+		LEFT JOIN activities a ON s.activity_id = a.id
+	`
+	args := []interface{}{}
+
+	if startDate != nil && endDate != nil {
+		query += " WHERE s.started_at >= ? AND s.started_at <= ?"
+		args = append(args, *startDate, *endDate)
+	}
+
+	query += " GROUP BY s.activity_id, activity_name ORDER BY total_time DESC"
+
+	var stats []ActivityStats
+	err := db.Select(&stats, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
+type TypeStats struct {
+	Type         model.SessionType `db:"type"`
+	TotalTime    int               `db:"total_time"`
+	SessionCount int               `db:"session_count"`
+}
+
+func GetTypeStats(db *sqlx.DB, startDate, endDate *time.Time) ([]TypeStats, error) {
+	query := `
+		SELECT 
+			type,
+			SUM(duration) as total_time,
+			COUNT(id) as session_count
+		FROM sessions
+	`
+	args := []interface{}{}
+
+	if startDate != nil && endDate != nil {
+		query += " WHERE started_at >= ? AND started_at <= ?"
+		args = append(args, *startDate, *endDate)
+	}
+
+	query += " GROUP BY type ORDER BY type"
+
+	var stats []TypeStats
+	err := db.Select(&stats, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
+type OverallStats struct {
+	TotalSessions int `db:"total_sessions"`
+	TotalTime     int `db:"total_time"`
+}
+
+func GetOverallStats(db *sqlx.DB, startDate, endDate *time.Time) (*OverallStats, error) {
+	query := `
+		SELECT 
+			COUNT(id) as total_sessions,
+			COALESCE(SUM(duration), 0) as total_time
+		FROM sessions
+	`
+	args := []interface{}{}
+
+	if startDate != nil && endDate != nil {
+		query += " WHERE started_at >= ? AND started_at <= ?"
+		args = append(args, *startDate, *endDate)
+	}
+
+	var stats OverallStats
+	err := db.Get(&stats, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return &stats, nil
+}
+
+type DailySessionStats struct {
+	Date          string `db:"date"`
+	PomodoroCount int    `db:"pomodoro_count"`
+	PomodoroTime  int    `db:"pomodoro_time"`
+	TrackerCount  int    `db:"tracker_count"`
+	TrackerTime   int    `db:"tracker_time"`
+}
+
+func GetDailySessionStats(db *sqlx.DB, startDate, endDate *time.Time) ([]DailySessionStats, error) {
+	query := `
+		SELECT 
+			SUBSTR(started_at, 1, 10) as date,
+			SUM(CASE WHEN type = 'pomodoro' THEN 1 ELSE 0 END) as pomodoro_count,
+			SUM(CASE WHEN type = 'pomodoro' THEN duration ELSE 0 END) as pomodoro_time,
+			SUM(CASE WHEN type = 'tracker' THEN 1 ELSE 0 END) as tracker_count,
+			SUM(CASE WHEN type = 'tracker' THEN duration ELSE 0 END) as tracker_time
+		FROM sessions
+	`
+	args := []interface{}{}
+
+	if startDate != nil && endDate != nil {
+		query += " WHERE started_at >= ? AND started_at <= ?"
+		args = append(args, *startDate, *endDate)
+	}
+
+	query += " GROUP BY SUBSTR(started_at, 1, 10) ORDER BY date ASC"
+
+	var stats []DailySessionStats
+	err := db.Select(&stats, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return stats, nil
+}

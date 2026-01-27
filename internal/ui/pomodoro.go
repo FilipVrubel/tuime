@@ -20,8 +20,8 @@ func (m Model) startPomodoro() (tea.Model, tea.Cmd) {
 
 func (m Model) startPomodoroWithActivity() (tea.Model, tea.Cmd) {
 	m.pomodoroSelectingActivity = false
-	m.WorkDuration = 5 * time.Second       // TODO: change to 25 * time.Minute
-	m.ShortBreakDuration = 5 * time.Second // TODO: change to 5 * time.Minute
+	m.WorkDuration = 5 * time.Minute
+	m.ShortBreakDuration = 5 * time.Minute
 	m.LongBreakDuration = 15 * time.Minute
 	m.CyclesBeforeLongBreak = 4
 	m.CyclesDone = 0
@@ -36,20 +36,20 @@ func (m *Model) saveWorkSession() tea.Cmd {
 	if m.Phase != WorkPhase {
 		return nil
 	}
-	
+
 	activeWorkTime := m.WorkDuration - m.Remaining
 	if activeWorkTime <= 0 {
 		return nil
 	}
-	
+
 	endedAt := m.sessionStartedAt.Add(activeWorkTime)
 	duration := int(activeWorkTime.Seconds())
 	session := &model.Session{
-		ActivityID:  m.selectedActivityForSession,
-		StartedAt:   m.sessionStartedAt,
-		EndedAt:     endedAt,
-		Duration:    duration,
-		Type:        model.PomodoroSession,
+		ActivityID: m.selectedActivityForSession,
+		StartedAt:  m.sessionStartedAt,
+		EndedAt:    endedAt,
+		Duration:   duration,
+		Type:       model.PomodoroSession,
 	}
 	return saveSessionCmd(m.DB, session)
 }
@@ -62,10 +62,10 @@ func (m Model) updatePomodoro(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pomodoroActivityCursor = 0
 		}
 		return m, nil
-	
+
 	case sessionSavedMsg:
 		return m, nil
-	
+
 	case sessionSaveErrorMsg:
 		return m, nil
 
@@ -126,15 +126,15 @@ func (m *Model) transitionPhase() tea.Cmd {
 			endedAt := m.sessionStartedAt.Add(activeWorkTime)
 			duration := int(activeWorkTime.Seconds())
 			session := &model.Session{
-				ActivityID:  m.selectedActivityForSession,
-				StartedAt:   m.sessionStartedAt,
-				EndedAt:     endedAt,
-				Duration:    duration,
-				Type:        model.PomodoroSession,
+				ActivityID: m.selectedActivityForSession,
+				StartedAt:  m.sessionStartedAt,
+				EndedAt:    endedAt,
+				Duration:   duration,
+				Type:       model.PomodoroSession,
 			}
 			cmd = saveSessionCmd(m.DB, session)
 		}
-		
+
 		m.CyclesDone++
 		m.Phase = BreakPhase
 		if m.CyclesDone%m.CyclesBeforeLongBreak == 0 {

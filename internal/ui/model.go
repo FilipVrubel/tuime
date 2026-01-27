@@ -3,6 +3,7 @@ package ui
 import (
 	"time"
 
+	"tuime/internal/db"
 	"tuime/internal/model"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,25 +38,24 @@ type Model struct {
 	CurrentView View
 
 	// Tracker state
-	Running                    bool
-	StartTime                  time.Time
-	Elapsed                    time.Duration
-	trackerSelectingActivity   bool
-	trackerActivityCursor      int
+	Running                  bool
+	StartTime                time.Time
+	Elapsed                  time.Duration
+	trackerSelectingActivity bool
+	trackerActivityCursor    int
 
 	// Pomodoro state
-	WorkDuration             time.Duration
-	ShortBreakDuration       time.Duration
-	LongBreakDuration        time.Duration
-	CyclesBeforeLongBreak    int
-	CyclesDone               int
-	Phase                    Phase
-	Remaining                time.Duration
+	WorkDuration              time.Duration
+	ShortBreakDuration        time.Duration
+	LongBreakDuration         time.Duration
+	CyclesBeforeLongBreak     int
+	CyclesDone                int
+	Phase                     Phase
+	Remaining                 time.Duration
 	pomodoroSelectingActivity bool
 	pomodoroActivityCursor    int
 
 	// Session tracking state
-	currentSessionID           *int
 	sessionStartedAt           time.Time
 	selectedActivityForSession *int
 
@@ -68,6 +68,14 @@ type Model struct {
 	inputMode        bool
 	inputValue       string
 	errorMsg         string
+
+	// Statistics state
+	statsFilterIndex int
+	statsViewMode    int
+	activityStats    []db.ActivityStats
+	typeStats        []db.TypeStats
+	overallStats     *db.OverallStats
+	dailyStats       []db.DailySessionStats
 }
 
 func NewModel(db *sqlx.DB) Model {
@@ -114,6 +122,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updatePomodoro(msg)
 		case ActivitiesView:
 			return m.updateActivities(msg)
+		case StatisticsView:
+			return m.updateStatistics(msg)
 		}
 
 	default:
@@ -125,6 +135,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.CurrentView == PomodoroView {
 			return m.updatePomodoro(msg)
+		}
+		if m.CurrentView == StatisticsView {
+			return m.updateStatistics(msg)
 		}
 	}
 	return m, nil
@@ -138,6 +151,8 @@ func (m Model) View() string {
 		return m.viewPomodoro()
 	case ActivitiesView:
 		return m.viewActivities()
+	case StatisticsView:
+		return m.viewStatistics()
 	default:
 		return m.viewHome()
 	}

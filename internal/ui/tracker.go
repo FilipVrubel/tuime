@@ -82,7 +82,7 @@ func (m Model) updateTracker(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.Running || m.Elapsed > 0 {
 				endTime := time.Now()
 				durationSeconds := int(m.Elapsed.Seconds())
-				
+
 				session := &model.Session{
 					ActivityID: m.selectedActivityForSession,
 					StartedAt:  m.sessionStartedAt,
@@ -90,7 +90,7 @@ func (m Model) updateTracker(msg tea.Msg) (tea.Model, tea.Cmd) {
 					Duration:   durationSeconds,
 					Type:       model.TrackerSession,
 				}
-				
+
 				m.Running = false
 				m.CurrentView = HomeView
 				m.Elapsed = 0

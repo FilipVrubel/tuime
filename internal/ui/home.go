@@ -29,6 +29,8 @@ func (m Model) updateHome(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m.startPomodoro()
 		case "Activities":
 			return m.startActivities()
+		case "Statistics":
+			return m.startStatistics()
 		}
 	}
 	return m, nil
