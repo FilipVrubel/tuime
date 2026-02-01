@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) updateHome(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -41,8 +42,17 @@ func (m Model) updateHome(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) viewHome() string {
 	var b strings.Builder
+	width := m.width
+	if width == 0 {
+		width = 80
+	}
+	height := m.height
+	if height == 0 {
+		height = 25
+	}
+	centerStyle := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
 
-	b.WriteString(TitleStyle.Render("tuime"))
+	b.WriteString(centerStyle.Render(TitleStyle.Render("tuime")))
 	b.WriteString("\n\n")
 
 	for i, item := range m.Items {
@@ -52,13 +62,17 @@ func (m Model) viewHome() string {
 			cursor = "> "
 			style = SelectedStyle
 		}
-		b.WriteString(fmt.Sprintf("%s%s\n", cursor, style.Render(item.Title)))
+		b.WriteString(centerStyle.Render(fmt.Sprintf("%s%s", cursor, style.Render(item.Title))))
 		if m.Cursor == i {
-			b.WriteString(fmt.Sprintf("    %s\n", HelpStyle.Render(item.Desc)))
+			b.WriteString(centerStyle.Render(HelpStyle.Render(item.Desc)))
+			b.WriteString("\n\n")
+		} else {
+			b.WriteString("\n")
 		}
 	}
 
-	b.WriteString(HelpStyle.Render("\nup/down: navigate • enter: select • q: quit"))
+	b.WriteString("\n")
+	b.WriteString(centerStyle.Render(HelpStyle.Render("up/down: navigate • enter: select • q: quit")))
 
-	return b.String()
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 }

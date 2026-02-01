@@ -13,23 +13,23 @@ func (m *Model) startConfig() {
 	m.CurrentView = ConfigView
 	m.configCursor = 0
 	m.errorMsg = ""
-	
+
 	m.configInputs = make([]textinput.Model, 4)
-	
+
 	labels := []string{"Work Duration (minutes)", "Short Break (minutes)", "Long Break (minutes)", "Cycles Before Long Break"}
 	values := []int{m.Config.WorkDuration, m.Config.ShortBreakDuration, m.Config.LongBreakDuration, m.Config.CyclesBeforeLongBreak}
-	
+
 	for i := range m.configInputs {
 		ti := textinput.New()
 		ti.Placeholder = labels[i]
 		ti.CharLimit = 3
 		ti.Width = 20
 		ti.SetValue(strconv.Itoa(values[i]))
-		
+
 		if i == 0 {
 			ti.Focus()
 		}
-		
+
 		m.configInputs[i] = ti
 	}
 }
@@ -130,7 +130,7 @@ func (m Model) viewConfig() string {
 		if m.configCursor == i {
 			cursor = "→ "
 		}
-		
+
 		s += fmt.Sprintf("%s%-30s %s\n", cursor, label, m.configInputs[i].View())
 	}
 

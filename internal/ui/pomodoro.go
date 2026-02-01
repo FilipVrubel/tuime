@@ -8,6 +8,7 @@ import (
 	"tuime/internal/model"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) startPomodoro() (tea.Model, tea.Cmd) {
@@ -164,11 +165,20 @@ func (m Model) tickPomodoro() (tea.Model, tea.Cmd) {
 func (m Model) viewPomodoro() string {
 	var b strings.Builder
 
-	b.WriteString(TitleStyle.Render("Pomodoro Timer"))
-	b.WriteString("\n\n")
+	width := m.width
+	if width == 0 {
+		width = 80
+	}
+	height := m.height
+	if height == 0 {
+		height = 25
+	}
+	centerStyle := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
 
 	if m.pomodoroSelectingActivity {
-		b.WriteString(NormalStyle.Render("Select an activity (optional):"))
+		b.WriteString(centerStyle.Render(TitleStyle.Render("Pomodoro Timer")))
+		b.WriteString("\n\n")
+		b.WriteString(centerStyle.Render(NormalStyle.Render("Select an activity (optional):")))
 		b.WriteString("\n\n")
 
 		cursor := "  "
@@ -177,8 +187,7 @@ func (m Model) viewPomodoro() string {
 			cursor = "> "
 			style = SelectedStyle
 		}
-		b.WriteString(cursor)
-		b.WriteString(style.Render("None"))
+		b.WriteString(centerStyle.Render(cursor + style.Render("None")))
 		b.WriteString("\n")
 
 		for i, activity := range m.activities {
@@ -188,35 +197,48 @@ func (m Model) viewPomodoro() string {
 				cursor = "> "
 				style = SelectedStyle
 			}
-			b.WriteString(cursor)
-			b.WriteString(style.Render(activity.Name))
+			b.WriteString(centerStyle.Render(cursor + style.Render(activity.Name)))
 			b.WriteString("\n")
 		}
 
 		b.WriteString("\n")
-		b.WriteString(HelpStyle.Render("↑/↓: navigate • enter: select • esc: back"))
+		b.WriteString(centerStyle.Render(HelpStyle.Render("↑/↓: navigate • enter: select • esc: back")))
 	} else {
-		b.WriteString(TimeStyle.Render(FormatDuration(m.Remaining)))
-		b.WriteString("\n\n")
-
-		phaseStr := "Work"
-		if m.Phase == BreakPhase {
-			phaseStr = "Break"
+		var titleStyle, timeStyle, phaseStyle lipgloss.Style
+		if m.Phase == WorkPhase {
+			titleStyle = PomodoroWorkTitleStyle
+			timeStyle = PomodoroWorkStyle
+			phaseStyle = PomodoroWorkStyle
+		} else {
+			titleStyle = PomodoroBreakTitleStyle
+			timeStyle = PomodoroBreakStyle
+			phaseStyle = PomodoroBreakStyle
 		}
-		b.WriteString(NormalStyle.Render("Phase: " + phaseStr))
-		b.WriteString("\n")
+
+		b.WriteString(centerStyle.Render(titleStyle.Render("Pomodoro Timer")))
+		b.WriteString("\n\n")
+		b.WriteString(centerStyle.Render(timeStyle.Render(FormatDuration(m.Remaining))))
+		b.WriteString("\n\n\n")
+
+		phaseStr := "Work Phase"
+		if m.Phase == BreakPhase {
+			phaseStr = "Break Phase"
+		}
+		b.WriteString(centerStyle.Render(phaseStyle.Render(phaseStr)))
+		b.WriteString("\n\n")
 
 		status := "[Running]"
 		if !m.Running {
 			status = "[Paused]"
 		}
-		b.WriteString(NormalStyle.Render(status))
-		b.WriteString("\n")
+		b.WriteString(centerStyle.Render(NormalStyle.Render(status)))
+		b.WriteString("\n\n")
 
-		b.WriteString(fmt.Sprintf("Cycles completed: %d\n", m.CyclesDone))
+		b.WriteString(centerStyle.Render(NormalStyle.Render(fmt.Sprintf("Cycles completed: %d", m.CyclesDone))))
 
-		b.WriteString(HelpStyle.Render("\nspace: pause/resume • esc: stop & back • right: skip phase"))
+		b.WriteString("\n\n")
+		b.WriteString(centerStyle.Render(HelpStyle.Render("space: pause/resume • esc: stop & back • right: skip phase")))
 	}
 
-	return b.String()
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 }

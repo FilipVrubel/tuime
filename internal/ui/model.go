@@ -66,9 +66,9 @@ type Model struct {
 	DB *sqlx.DB
 
 	// Configuration
-	Config         *config.Config
-	configCursor   int
-	configInputs   []textinput.Model
+	Config       *config.Config
+	configCursor int
+	configInputs []textinput.Model
 
 	// Activities state
 	activities       []model.Activity
@@ -84,6 +84,10 @@ type Model struct {
 	typeStats        []db.TypeStats
 	overallStats     *db.OverallStats
 	dailyStats       []db.DailySessionStats
+
+	// Terminal dimensions
+	width  int
+	height int
 }
 
 func NewModel(db *sqlx.DB, cfg *config.Config) Model {
@@ -108,6 +112,11 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
 
 	case TickMsg:
 		if m.Running && m.CurrentView == TimeTrackerView {
