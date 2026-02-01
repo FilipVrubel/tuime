@@ -24,28 +24,16 @@ go build -o tuime .
 
 ### Using Docker
 
-See [README.docker.md](README.docker.md) for containerized deployment.
+```bash
+# Start the container in detached mode
+docker compose up -d
 
+# Attach to the running container
+docker attach tuime
 
-### Navigation
-
-- **Tab**: Switch between views (Home, Statistics, Activities, Config)
-- **Arrow Keys**: Navigate menus and change time periods in statistics
-- **Enter**: Select/activate items
-- **Esc**: Go back or exit
-
-### Pomodoro Timer
-
-1. Navigate to "Start Pomodoro"
-2. Select an activity (or choose "No Activity")
-3. Timer starts automatically
-4. Take breaks as prompted (short break after each session, long break after 4 cycles)
-
-### Manual Tracking
-
-1. Navigate to "Start Tracker"
-2. Select an activity
-3. Press Space to start/pause, Enter to finish
+# Stop the container
+docker compose down
+```
 
 ## Configuration
 
