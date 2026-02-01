@@ -16,7 +16,7 @@ A terminal-based time tracking application with Pomodoro timer support.
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/tuime.git
+git clone https://github.com/FilipVrubel/tuime.git
 cd tuime
 go build -o tuime .
 ./tuime
