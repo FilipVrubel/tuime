@@ -127,7 +127,7 @@ func (m Model) viewConfig() string {
 	}
 
 	centerStyle := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
-	
+
 	var b strings.Builder
 
 	b.WriteString(centerStyle.Render(TitleStyle.Render("Configuration")))

@@ -33,7 +33,7 @@ func Migrate(db *sqlx.DB) error {
 			ended_at DATETIME NOT NULL,
 			duration INTEGER NOT NULL,
 			type TEXT NOT NULL CHECK(type IN ('pomodoro', 'tracker')),
-			FOREIGN KEY(activity_id) REFERENCES activities(id)
+			FOREIGN KEY(activity_id) REFERENCES activities(id) ON DELETE SET NULL
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_sessions_activity ON sessions(activity_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_sessions_started ON sessions(started_at)`,

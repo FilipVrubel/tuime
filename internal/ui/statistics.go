@@ -108,7 +108,12 @@ func (m Model) loadStatsForFilter() (tea.Model, tea.Cmd) {
 		startDate = &start
 		endDate = &end
 	case 1:
-		start := now.AddDate(0, 0, -int(now.Weekday()))
+		// Calculate the start of this week (Monday)
+		daysFromMonday := int(now.Weekday()) - 1
+		if daysFromMonday < 0 {
+			daysFromMonday = 6 // Sunday is 6 days after Monday
+		}
+		start := now.AddDate(0, 0, -daysFromMonday)
 		start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
 		end := start.AddDate(0, 0, 7)
 		startDate = &start
@@ -249,6 +254,7 @@ func (m Model) viewPomodoroTimeSeries(b *strings.Builder, centerStyle lipgloss.S
 	maxX := float64(len(m.dailyStats) - 1)
 	if maxX < 1 {
 		maxX = 1
+		minX = -0.5
 	}
 	minY := 0.0
 	maxY := 0.0
@@ -264,7 +270,29 @@ func (m Model) viewPomodoroTimeSeries(b *strings.Builder, centerStyle lipgloss.S
 		maxY = 1
 	}
 
-	lc := linechart.New(60, 12, minX, maxX, minY, maxY*1.1, linechart.WithAutoXYRange())
+	xLabelFormatter := func(i int, v float64) string {
+		idx := int(v)
+		if idx >= 0 && idx < len(m.dailyStats) {
+			date := m.dailyStats[idx].Date
+			if len(date) >= 10 {
+				if m.statsFilterIndex == 3 {
+					if t, err := time.Parse("2006-01-02", date); err == nil {
+						return t.Format("Jan/06")
+					}
+				}
+				return date[5:10]
+			}
+		}
+		return fmt.Sprintf("%.0f", v)
+	}
+
+	yLabelFormatter := func(i int, v float64) string {
+		return fmt.Sprintf("%.0fm", v)
+	}
+
+	lc := linechart.New(60, 12, minX, maxX, minY, maxY*1.1,
+		linechart.WithXLabelFormatter(xLabelFormatter),
+		linechart.WithYLabelFormatter(yLabelFormatter))
 
 	for i, stat := range m.dailyStats {
 		minutes := float64(stat.PomodoroTime) / 60.0
@@ -322,6 +350,7 @@ func (m Model) viewTrackerTimeSeries(b *strings.Builder, centerStyle lipgloss.St
 	maxX := float64(len(m.dailyStats) - 1)
 	if maxX < 1 {
 		maxX = 1
+		minX = -0.5
 	}
 	minY := 0.0
 	maxY := 0.0
@@ -342,6 +371,11 @@ func (m Model) viewTrackerTimeSeries(b *strings.Builder, centerStyle lipgloss.St
 		if idx >= 0 && idx < len(m.dailyStats) {
 			date := m.dailyStats[idx].Date
 			if len(date) >= 10 {
+				if m.statsFilterIndex == 3 {
+					if t, err := time.Parse("2006-01-02", date); err == nil {
+						return t.Format("Jan/06")
+					}
+				}
 				return date[5:10]
 			}
 		}
@@ -353,7 +387,6 @@ func (m Model) viewTrackerTimeSeries(b *strings.Builder, centerStyle lipgloss.St
 	}
 
 	lc := linechart.New(60, 12, minX, maxX, minY, maxY*1.1,
-		linechart.WithAutoXYRange(),
 		linechart.WithXLabelFormatter(xLabelFormatter),
 		linechart.WithYLabelFormatter(yLabelFormatter))
 

@@ -58,7 +58,7 @@ func ListSessions(db *sqlx.DB, filter SessionFilter) ([]model.Session, error) {
 	}
 
 	if filter.EndDate != nil {
-		query += " AND started_at <= ?"
+		query += " AND started_at < ?"
 		args = append(args, *filter.EndDate)
 	}
 
@@ -147,7 +147,7 @@ func GetSessionsByDateRange(db *sqlx.DB, startDate, endDate time.Time) ([]model.
 	err := db.Select(&sessions, `
 		SELECT id, activity_id, started_at, ended_at, duration, type 
 		FROM sessions 
-		WHERE started_at >= ? AND started_at <= ?
+		WHERE started_at >= ? AND started_at < ?
 		ORDER BY started_at DESC
 	`, startDate, endDate)
 	if err != nil {
@@ -176,8 +176,10 @@ func GetActivityStats(db *sqlx.DB, startDate, endDate *time.Time) ([]ActivitySta
 	args := []interface{}{}
 
 	if startDate != nil && endDate != nil {
-		query += " WHERE s.started_at >= ? AND s.started_at <= ?"
-		args = append(args, *startDate, *endDate)
+		startStr := startDate.Format("2006-01-02 15:04:05")
+		endStr := endDate.Format("2006-01-02 15:04:05")
+		query += " WHERE SUBSTR(s.started_at, 1, 19) >= ? AND SUBSTR(s.started_at, 1, 19) < ?"
+		args = append(args, startStr, endStr)
 	}
 
 	query += " GROUP BY s.activity_id, activity_name ORDER BY total_time DESC"
@@ -207,8 +209,10 @@ func GetTypeStats(db *sqlx.DB, startDate, endDate *time.Time) ([]TypeStats, erro
 	args := []interface{}{}
 
 	if startDate != nil && endDate != nil {
-		query += " WHERE started_at >= ? AND started_at <= ?"
-		args = append(args, *startDate, *endDate)
+		startStr := startDate.Format("2006-01-02 15:04:05")
+		endStr := endDate.Format("2006-01-02 15:04:05")
+		query += " WHERE SUBSTR(started_at, 1, 19) >= ? AND SUBSTR(started_at, 1, 19) < ?"
+		args = append(args, startStr, endStr)
 	}
 
 	query += " GROUP BY type ORDER BY type"
@@ -236,8 +240,10 @@ func GetOverallStats(db *sqlx.DB, startDate, endDate *time.Time) (*OverallStats,
 	args := []interface{}{}
 
 	if startDate != nil && endDate != nil {
-		query += " WHERE started_at >= ? AND started_at <= ?"
-		args = append(args, *startDate, *endDate)
+		startStr := startDate.Format("2006-01-02 15:04:05")
+		endStr := endDate.Format("2006-01-02 15:04:05")
+		query += " WHERE SUBSTR(started_at, 1, 19) >= ? AND SUBSTR(started_at, 1, 19) < ?"
+		args = append(args, startStr, endStr)
 	}
 
 	var stats OverallStats
@@ -269,8 +275,10 @@ func GetDailySessionStats(db *sqlx.DB, startDate, endDate *time.Time) ([]DailySe
 	args := []interface{}{}
 
 	if startDate != nil && endDate != nil {
-		query += " WHERE started_at >= ? AND started_at <= ?"
-		args = append(args, *startDate, *endDate)
+		startStr := startDate.Format("2006-01-02 15:04:05")
+		endStr := endDate.Format("2006-01-02 15:04:05")
+		query += " WHERE SUBSTR(started_at, 1, 19) >= ? AND SUBSTR(started_at, 1, 19) < ?"
+		args = append(args, startStr, endStr)
 	}
 
 	query += " GROUP BY SUBSTR(started_at, 1, 10) ORDER BY date ASC"
