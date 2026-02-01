@@ -142,17 +142,26 @@ func (m Model) updateActivities(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) viewActivities() string {
 	var b strings.Builder
 
-	b.WriteString(TitleStyle.Render("Activities"))
+	width := m.width
+	if width == 0 {
+		width = 80
+	}
+	height := m.height
+	if height == 0 {
+		height = 25
+	}
+	centerStyle := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
+
+	b.WriteString(centerStyle.Render(TitleStyle.Render("Activities")))
 	b.WriteString("\n\n")
 
 	if m.inputMode {
-		b.WriteString("New activity: ")
-		b.WriteString(m.inputValue)
-		b.WriteString("█\n\n") // Cursor
-		b.WriteString(HelpStyle.Render("enter: save • esc: cancel"))
+		b.WriteString(centerStyle.Render("New activity: " + m.inputValue + "█"))
+		b.WriteString("\n\n")
+		b.WriteString(centerStyle.Render(HelpStyle.Render("enter: save • esc: cancel")))
 	} else {
 		if len(m.activities) == 0 {
-			b.WriteString(NormalStyle.Render("No activities yet. Press 'n' to create one."))
+			b.WriteString(centerStyle.Render(NormalStyle.Render("No activities yet. Press 'n' to create one.")))
 			b.WriteString("\n\n")
 		} else {
 			for i, activity := range m.activities {
@@ -162,20 +171,19 @@ func (m Model) viewActivities() string {
 					cursor = "> "
 					style = SelectedStyle
 				}
-				b.WriteString(cursor)
-				b.WriteString(style.Render(activity.Name))
+				b.WriteString(centerStyle.Render(cursor + style.Render(activity.Name)))
 				b.WriteString("\n")
 			}
 			b.WriteString("\n")
 		}
-		b.WriteString(HelpStyle.Render("n: new • d: delete • ↑/↓: navigate • esc: back"))
+		b.WriteString(centerStyle.Render(HelpStyle.Render("n: new • d: delete • ↑/↓: navigate • esc: back")))
 	}
 
 	if m.errorMsg != "" {
 		b.WriteString("\n\n")
 		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
-		b.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", m.errorMsg)))
+		b.WriteString(centerStyle.Render(errorStyle.Render(fmt.Sprintf("Error: %s", m.errorMsg))))
 	}
 
-	return b.String()
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 }

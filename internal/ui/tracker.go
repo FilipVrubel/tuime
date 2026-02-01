@@ -7,6 +7,7 @@ import (
 	"tuime/internal/model"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) startTracker() (tea.Model, tea.Cmd) {
@@ -109,11 +110,20 @@ func (m Model) updateTracker(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) viewTracker() string {
 	var b strings.Builder
 
-	b.WriteString(TitleStyle.Render("Time Tracker"))
-	b.WriteString("\n\n")
+	width := m.width
+	if width == 0 {
+		width = 80
+	}
+	height := m.height
+	if height == 0 {
+		height = 25
+	}
+	centerStyle := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
 
 	if m.trackerSelectingActivity {
-		b.WriteString(NormalStyle.Render("Select an activity (optional):"))
+		b.WriteString(centerStyle.Render(TitleStyle.Render("Time Tracker")))
+		b.WriteString("\n\n")
+		b.WriteString(centerStyle.Render(NormalStyle.Render("Select an activity (optional):")))
 		b.WriteString("\n\n")
 
 		cursor := "  "
@@ -122,8 +132,7 @@ func (m Model) viewTracker() string {
 			cursor = "> "
 			style = SelectedStyle
 		}
-		b.WriteString(cursor)
-		b.WriteString(style.Render("None"))
+		b.WriteString(centerStyle.Render(cursor + style.Render("None")))
 		b.WriteString("\n")
 
 		for i, activity := range m.activities {
@@ -133,26 +142,27 @@ func (m Model) viewTracker() string {
 				cursor = "> "
 				style = SelectedStyle
 			}
-			b.WriteString(cursor)
-			b.WriteString(style.Render(activity.Name))
+			b.WriteString(centerStyle.Render(cursor + style.Render(activity.Name)))
 			b.WriteString("\n")
 		}
 
 		b.WriteString("\n")
-		b.WriteString(HelpStyle.Render("↑/↓: navigate • enter: select • esc: back"))
+		b.WriteString(centerStyle.Render(HelpStyle.Render("↑/↓: navigate • enter: select • esc: back")))
 	} else {
-		b.WriteString(TimeStyle.Render(FormatDuration(m.Elapsed)))
+		b.WriteString(centerStyle.Render(TitleStyle.Render("Time Tracker")))
+		b.WriteString("\n\n")
+		b.WriteString(centerStyle.Render(TimeStyle.Render(FormatDuration(m.Elapsed))))
 		b.WriteString("\n\n")
 
 		status := "[Running]"
 		if !m.Running {
 			status = "[Paused]"
 		}
-		b.WriteString(NormalStyle.Render(status))
-		b.WriteString("\n")
+		b.WriteString(centerStyle.Render(NormalStyle.Render(status)))
+		b.WriteString("\n\n")
 
-		b.WriteString(HelpStyle.Render("\nspace: pause/resume • enter: save & back • esc: cancel"))
+		b.WriteString(centerStyle.Render(HelpStyle.Render("space: pause/resume • enter: save & back • esc: cancel")))
 	}
 
-	return b.String()
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 }

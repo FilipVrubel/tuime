@@ -11,6 +11,7 @@ import (
 	"github.com/NimbleMarkets/ntcharts/canvas"
 	"github.com/NimbleMarkets/ntcharts/linechart"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -128,7 +129,17 @@ func (m Model) loadStatsForFilter() (tea.Model, tea.Cmd) {
 func (m Model) viewStatistics() string {
 	var b strings.Builder
 
-	b.WriteString(TitleStyle.Render("Statistics"))
+	width := m.width
+	if width == 0 {
+		width = 80
+	}
+	height := m.height
+	if height == 0 {
+		height = 25
+	}
+	centerStyle := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
+
+	b.WriteString(centerStyle.Render(TitleStyle.Render("Statistics")))
 	b.WriteString("\n\n")
 
 	filters := []string{"Today", "This Week", "This Month", "All Time"}
@@ -143,7 +154,7 @@ func (m Model) viewStatistics() string {
 			filterDisplay.WriteString("  ")
 		}
 	}
-	b.WriteString(filterDisplay.String())
+	b.WriteString(centerStyle.Render(filterDisplay.String()))
 	b.WriteString("\n")
 
 	views := []string{"Overview", "Pomodoro Chart", "Tracker Chart"}
@@ -158,74 +169,80 @@ func (m Model) viewStatistics() string {
 			viewDisplay.WriteString(" | ")
 		}
 	}
-	b.WriteString(viewDisplay.String())
+	b.WriteString(centerStyle.Render(viewDisplay.String()))
 	b.WriteString("\n\n")
 
 	if m.overallStats == nil {
-		b.WriteString(NormalStyle.Render("Loading..."))
-		return b.String()
+		b.WriteString(centerStyle.Render(NormalStyle.Render("Loading...")))
+		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 	}
 
 	switch m.statsViewMode {
 	case 0:
-		return m.viewStatsOverview(&b)
+		return m.viewStatsOverview(&b, centerStyle, width, height)
 	case 1:
-		return m.viewPomodoroTimeSeries(&b)
+		return m.viewPomodoroTimeSeries(&b, centerStyle, width, height)
 	case 2:
-		return m.viewTrackerTimeSeries(&b)
+		return m.viewTrackerTimeSeries(&b, centerStyle, width, height)
 	}
 
-	return b.String()
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 }
 
-func (m Model) viewStatsOverview(b *strings.Builder) string {
-	b.WriteString(NormalStyle.Render(fmt.Sprintf("Total Sessions: %d", m.overallStats.TotalSessions)))
+func (m Model) viewStatsOverview(b *strings.Builder, centerStyle lipgloss.Style, width, height int) string {
+	b.WriteString(centerStyle.Render(NormalStyle.Render(fmt.Sprintf("Total Sessions: %d", m.overallStats.TotalSessions))))
 	b.WriteString("\n")
-	b.WriteString(NormalStyle.Render(fmt.Sprintf("Total Time: %s", formatSeconds(m.overallStats.TotalTime))))
+	b.WriteString(centerStyle.Render(NormalStyle.Render(fmt.Sprintf("Total Time: %s", formatSeconds(m.overallStats.TotalTime)))))
 	b.WriteString("\n\n")
 
 	if len(m.typeStats) > 0 {
-		b.WriteString(NormalStyle.Render("By Type:"))
+		b.WriteString(centerStyle.Render(NormalStyle.Render("By Type:")))
 		b.WriteString("\n")
 		for _, stat := range m.typeStats {
-			b.WriteString(fmt.Sprintf("  %s: %s (%d sessions)\n",
+			b.WriteString(centerStyle.Render(fmt.Sprintf("  %s: %s (%d sessions)",
 				stat.Type,
 				formatSeconds(stat.TotalTime),
-				stat.SessionCount))
+				stat.SessionCount)))
+			b.WriteString("\n")
 		}
 		b.WriteString("\n")
 	}
 
 	if len(m.activityStats) > 0 {
-		b.WriteString(NormalStyle.Render("By Activity:"))
-		b.WriteString("\n")
+		b.WriteString(centerStyle.Render(NormalStyle.Render("By Activity:")))
+		b.WriteString("\n\n")
 
 		chart := m.createActivityChart()
 		if chart != "" {
-			b.WriteString(chart)
+			chartLines := strings.Split(chart, "\n")
+			for _, line := range chartLines {
+				b.WriteString(centerStyle.Render(line))
+				b.WriteString("\n")
+			}
 			b.WriteString("\n")
 		}
 
 		for _, stat := range m.activityStats {
-			b.WriteString(fmt.Sprintf("  %s: %s (%d sessions)\n",
+			b.WriteString(centerStyle.Render(fmt.Sprintf("  %s: %s (%d sessions)",
 				stat.ActivityName,
 				formatSeconds(stat.TotalTime),
-				stat.SessionCount))
+				stat.SessionCount)))
+			b.WriteString("\n")
 		}
 	}
 
 	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("←/→: change period • tab: switch view • esc: back"))
+	b.WriteString(centerStyle.Render(HelpStyle.Render("←/→: change period • tab: switch view • esc: back")))
 
 	return b.String()
 }
 
-func (m Model) viewPomodoroTimeSeries(b *strings.Builder) string {
+func (m Model) viewPomodoroTimeSeries(b *strings.Builder, centerStyle lipgloss.Style, width, height int) string {
 	if len(m.dailyStats) == 0 {
-		b.WriteString(NormalStyle.Render("No pomodoro data available for this period"))
+		b.WriteString(centerStyle.Render(NormalStyle.Render("No pomodoro data available for this period")))
 		b.WriteString("\n\n")
-		b.WriteString(HelpStyle.Render("←/→: change period • tab: switch view • esc: back"))
-		return b.String()
+		b.WriteString(centerStyle.Render(HelpStyle.Render("←/→: change period • tab: switch view • esc: back")))
+		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 	}
 
 	minX := 0.0
@@ -265,12 +282,17 @@ func (m Model) viewPomodoroTimeSeries(b *strings.Builder) string {
 	lc.DrawXYAxisAndLabel()
 	chart := lc.View()
 
-	b.WriteString(NormalStyle.Render("Pomodoro Sessions Over Time"))
+	b.WriteString(centerStyle.Render(NormalStyle.Render("Pomodoro Sessions Over Time")))
 	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("X-axis: Date (MM-DD) | Y-axis: Minutes"))
-	b.WriteString("\n")
-	b.WriteString(chart)
+	b.WriteString(centerStyle.Render(HelpStyle.Render("X-axis: Date (MM-DD) | Y-axis: Minutes")))
 	b.WriteString("\n\n")
+
+	chartLines := strings.Split(chart, "\n")
+	for _, line := range chartLines {
+		b.WriteString(centerStyle.Render(line))
+		b.WriteString("\n")
+	}
+	b.WriteString("\n")
 
 	totalPomodoros := 0
 	totalTime := 0
@@ -279,21 +301,21 @@ func (m Model) viewPomodoroTimeSeries(b *strings.Builder) string {
 		totalTime += stat.PomodoroTime
 	}
 
-	b.WriteString(fmt.Sprintf("Total Pomodoros: %d | Total Time: %s\n",
-		totalPomodoros, formatSeconds(totalTime)))
+	b.WriteString(centerStyle.Render(fmt.Sprintf("Total Pomodoros: %d | Total Time: %s",
+		totalPomodoros, formatSeconds(totalTime))))
+	b.WriteString("\n\n")
 
-	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("←/→: change period • tab: switch view • esc: back"))
+	b.WriteString(centerStyle.Render(HelpStyle.Render("←/→: change period • tab: switch view • esc: back")))
 
-	return b.String()
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 }
 
-func (m Model) viewTrackerTimeSeries(b *strings.Builder) string {
+func (m Model) viewTrackerTimeSeries(b *strings.Builder, centerStyle lipgloss.Style, width, height int) string {
 	if len(m.dailyStats) == 0 {
-		b.WriteString(NormalStyle.Render("No tracker data available for this period"))
+		b.WriteString(centerStyle.Render(NormalStyle.Render("No tracker data available for this period")))
 		b.WriteString("\n\n")
-		b.WriteString(HelpStyle.Render("←/→: change period • tab: switch view • esc: back"))
-		return b.String()
+		b.WriteString(centerStyle.Render(HelpStyle.Render("←/→: change period • tab: switch view • esc: back")))
+		return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 	}
 
 	minX := 0.0
@@ -351,12 +373,17 @@ func (m Model) viewTrackerTimeSeries(b *strings.Builder) string {
 	lc.DrawXYAxisAndLabel()
 	chart := lc.View()
 
-	b.WriteString(NormalStyle.Render("Tracker Sessions Over Time"))
+	b.WriteString(centerStyle.Render(NormalStyle.Render("Tracker Sessions Over Time")))
 	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("X-axis: Date (MM-DD) | Y-axis: Minutes"))
-	b.WriteString("\n")
-	b.WriteString(chart)
+	b.WriteString(centerStyle.Render(HelpStyle.Render("X-axis: Date (MM-DD) | Y-axis: Minutes")))
 	b.WriteString("\n\n")
+
+	chartLines := strings.Split(chart, "\n")
+	for _, line := range chartLines {
+		b.WriteString(centerStyle.Render(line))
+		b.WriteString("\n")
+	}
+	b.WriteString("\n")
 
 	totalSessions := 0
 	totalTime := 0
@@ -365,13 +392,13 @@ func (m Model) viewTrackerTimeSeries(b *strings.Builder) string {
 		totalTime += stat.TrackerTime
 	}
 
-	b.WriteString(fmt.Sprintf("Total Sessions: %d | Total Time: %s\n",
-		totalSessions, formatSeconds(totalTime)))
+	b.WriteString(centerStyle.Render(fmt.Sprintf("Total Sessions: %d | Total Time: %s",
+		totalSessions, formatSeconds(totalTime))))
+	b.WriteString("\n\n")
 
-	b.WriteString("\n")
-	b.WriteString(HelpStyle.Render("←/→: change period • tab: switch view • esc: back"))
+	b.WriteString(centerStyle.Render(HelpStyle.Render("←/→: change period • tab: switch view • esc: back")))
 
-	return b.String()
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 }
 
 func (m Model) createActivityChart() string {

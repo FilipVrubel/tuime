@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -116,7 +117,21 @@ func (m *Model) saveConfigFromInputs() error {
 }
 
 func (m Model) viewConfig() string {
-	s := TitleStyle.Render("Configuration") + "\n\n"
+	width := m.width
+	height := m.height
+	if width == 0 {
+		width = 80
+	}
+	if height == 0 {
+		height = 25
+	}
+
+	centerStyle := lipgloss.NewStyle().Width(width).Align(lipgloss.Center)
+	
+	var b strings.Builder
+
+	b.WriteString(centerStyle.Render(TitleStyle.Render("Configuration")))
+	b.WriteString("\n\n")
 
 	labels := []string{
 		"Work Duration (minutes):",
@@ -131,16 +146,19 @@ func (m Model) viewConfig() string {
 			cursor = "→ "
 		}
 
-		s += fmt.Sprintf("%s%-30s %s\n", cursor, label, m.configInputs[i].View())
+		line := fmt.Sprintf("%s%-30s %s", cursor, label, m.configInputs[i].View())
+		b.WriteString(centerStyle.Render(line))
+		b.WriteString("\n")
 	}
 
-	s += "\n"
+	b.WriteString("\n")
 
 	if m.errorMsg != "" {
-		s += "\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).Render(m.errorMsg) + "\n"
+		b.WriteString(centerStyle.Render(lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000")).Render(m.errorMsg)))
+		b.WriteString("\n")
 	}
 
-	s += HelpStyle.Render("↑/↓/tab navigate • type to edit • enter save • q/esc back")
+	b.WriteString(centerStyle.Render(HelpStyle.Render("↑/↓/tab navigate • type to edit • enter save • q/esc back")))
 
-	return s
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, b.String())
 }
