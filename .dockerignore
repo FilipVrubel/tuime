@@ -1,0 +1,43 @@
+# Binaries
+bin/
+tuime
+
+# Development files
+*.log
+*.swp
+*.swo
+*~
+
+# Test files
+*_test.go
+*.test
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Documentation
+README.md
+docs/
+
+# CI/CD
+.github/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# SQLite databases (will be in volumes)
+*.db
+*.db-shm
+*.db-wal
+
+# Config files (will be in volumes)
+.config/
+.local/
