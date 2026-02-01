@@ -94,3 +94,6 @@ make check
 make clean
 ```
 
+## License
+
+MIT
