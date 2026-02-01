@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ func (m Model) startTracker() (tea.Model, tea.Cmd) {
 	m.trackerSelectingActivity = true
 	m.trackerActivityCursor = 0
 	m.selectedActivityForSession = nil
+	m.trackerActivityPage = 0
 	return m, loadActivitiesCmd(m.DB)
 }
 
@@ -49,11 +51,19 @@ func (m Model) updateTracker(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "up", "k":
 				if m.trackerActivityCursor > 0 {
 					m.trackerActivityCursor--
+					itemsPerPage := 10
+					if m.trackerActivityCursor < m.trackerActivityPage*itemsPerPage {
+						m.trackerActivityPage--
+					}
 				}
 			case "down", "j":
 				maxCursor := len(m.activities)
 				if m.trackerActivityCursor < maxCursor {
 					m.trackerActivityCursor++
+					itemsPerPage := 10
+					if m.trackerActivityCursor >= (m.trackerActivityPage+1)*itemsPerPage {
+						m.trackerActivityPage++
+					}
 				}
 			case "enter":
 				if m.trackerActivityCursor == 0 {
@@ -126,18 +136,51 @@ func (m Model) viewTracker() string {
 		b.WriteString(centerStyle.Render(NormalStyle.Render("Select an activity (optional):")))
 		b.WriteString("\n\n")
 
-		cursor := "  "
-		style := NormalStyle
-		if m.trackerActivityCursor == 0 {
-			cursor = "> "
-			style = SelectedStyle
+		itemsPerPage := 10
+		totalItems := len(m.activities) + 1
+		totalPages := (totalItems + itemsPerPage - 1) / itemsPerPage
+		if m.trackerActivityPage >= totalPages {
+			m.trackerActivityPage = totalPages - 1
 		}
-		b.WriteString(centerStyle.Render(cursor + style.Render("None")))
-		b.WriteString("\n")
+		if m.trackerActivityPage < 0 {
+			m.trackerActivityPage = 0
+		}
 
-		for i, activity := range m.activities {
-			cursor = "  "
-			style = NormalStyle
+		start := m.trackerActivityPage * itemsPerPage
+		end := start + itemsPerPage
+		if end > totalItems {
+			end = totalItems
+		}
+
+		if totalPages > 1 {
+			b.WriteString(centerStyle.Render(NormalStyle.Render(fmt.Sprintf("Page %d/%d", m.trackerActivityPage+1, totalPages))))
+			b.WriteString("\n\n")
+		}
+
+		if start == 0 && end > 0 {
+			cursor := "  "
+			style := NormalStyle
+			if m.trackerActivityCursor == 0 {
+				cursor = "> "
+				style = SelectedStyle
+			}
+			b.WriteString(centerStyle.Render(cursor + style.Render("None")))
+			b.WriteString("\n")
+		}
+
+		activityStart := start - 1
+		if activityStart < 0 {
+			activityStart = 0
+		}
+		activityEnd := end - 1
+		if activityEnd > len(m.activities) {
+			activityEnd = len(m.activities)
+		}
+
+		for i := activityStart; i < activityEnd && i < len(m.activities); i++ {
+			activity := m.activities[i]
+			cursor := "  "
+			style := NormalStyle
 			if m.trackerActivityCursor == i+1 {
 				cursor = "> "
 				style = SelectedStyle

@@ -64,6 +64,7 @@ func (m Model) startActivities() (Model, tea.Cmd) {
 	m.inputValue = ""
 	m.errorMsg = ""
 	m.selectedActivity = 0
+	m.activitiesPage = 0
 	return m, loadActivitiesCmd(m.DB)
 }
 
@@ -98,10 +99,18 @@ func (m Model) updateActivities(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "up", "k":
 				if m.selectedActivity > 0 {
 					m.selectedActivity--
+					itemsPerPage := 10
+					if m.selectedActivity < m.activitiesPage*itemsPerPage {
+						m.activitiesPage--
+					}
 				}
 			case "down", "j":
 				if m.selectedActivity < len(m.activities)-1 {
 					m.selectedActivity++
+					itemsPerPage := 10
+					if m.selectedActivity >= (m.activitiesPage+1)*itemsPerPage {
+						m.activitiesPage++
+					}
 				}
 			case "n":
 				m.inputMode = true
@@ -164,7 +173,28 @@ func (m Model) viewActivities() string {
 			b.WriteString(centerStyle.Render(NormalStyle.Render("No activities yet. Press 'n' to create one.")))
 			b.WriteString("\n\n")
 		} else {
-			for i, activity := range m.activities {
+			itemsPerPage := 10
+			totalPages := (len(m.activities) + itemsPerPage - 1) / itemsPerPage
+			if m.activitiesPage >= totalPages {
+				m.activitiesPage = totalPages - 1
+			}
+			if m.activitiesPage < 0 {
+				m.activitiesPage = 0
+			}
+
+			start := m.activitiesPage * itemsPerPage
+			end := start + itemsPerPage
+			if end > len(m.activities) {
+				end = len(m.activities)
+			}
+
+			if totalPages > 1 {
+				b.WriteString(centerStyle.Render(NormalStyle.Render(fmt.Sprintf("Page %d/%d", m.activitiesPage+1, totalPages))))
+				b.WriteString("\n\n")
+			}
+
+			for i := start; i < end; i++ {
+				activity := m.activities[i]
 				cursor := "  "
 				style := NormalStyle
 				if i == m.selectedActivity {

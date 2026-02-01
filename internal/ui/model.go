@@ -71,11 +71,14 @@ type Model struct {
 	configInputs []textinput.Model
 
 	// Activities state
-	activities       []model.Activity
-	selectedActivity int
-	inputMode        bool
-	inputValue       string
-	errorMsg         string
+	activities           []model.Activity
+	selectedActivity     int
+	inputMode            bool
+	inputValue           string
+	errorMsg             string
+	activitiesPage       int
+	pomodoroActivityPage int
+	trackerActivityPage  int
 
 	// Statistics state
 	statsFilterIndex int
