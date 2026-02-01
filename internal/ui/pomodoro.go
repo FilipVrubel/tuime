@@ -9,6 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/gen2brain/beeep"
 )
 
 func (m Model) startPomodoro() (tea.Model, tea.Cmd) {
@@ -119,7 +120,22 @@ func (m Model) updatePomodoro(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m *Model) sendPhaseNotification() {
+	title := "Pomodoro Timer"
+	message := ""
+	if m.Phase == WorkPhase {
+		message = "Work session complete! Time for a break."
+	} else {
+		message = "Break is over! Ready to start working?"
+	}
+	go func() {
+		_ = beeep.Notify(title, message, "")
+	}()
+}
+
 func (m *Model) transitionPhase() tea.Cmd {
+	m.sendPhaseNotification()
+
 	var cmd tea.Cmd
 	if m.Phase == WorkPhase {
 		activeWorkTime := m.WorkDuration - m.Remaining
@@ -155,7 +171,6 @@ func (m Model) tickPomodoro() (tea.Model, tea.Cmd) {
 	m.Remaining -= time.Second
 	if m.Remaining <= 0 {
 		m.Running = false
-		fmt.Print("\a")
 		cmd := m.transitionPhase()
 		return m, cmd
 	}
