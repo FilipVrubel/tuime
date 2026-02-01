@@ -80,6 +80,7 @@ type Model struct {
 	// Statistics state
 	statsFilterIndex int
 	statsViewMode    int
+	activityPage     int
 	activityStats    []db.ActivityStats
 	typeStats        []db.TypeStats
 	overallStats     *db.OverallStats

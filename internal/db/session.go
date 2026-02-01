@@ -192,6 +192,50 @@ func GetActivityStats(db *sqlx.DB, startDate, endDate *time.Time) ([]ActivitySta
 	return stats, nil
 }
 
+type ActivityTypeStats struct {
+	ActivityID    *int   `db:"activity_id"`
+	ActivityName  string `db:"activity_name"`
+	PomodoroTime  int    `db:"pomodoro_time"`
+	PomodoroCount int    `db:"pomodoro_count"`
+	TrackerTime   int    `db:"tracker_time"`
+	TrackerCount  int    `db:"tracker_count"`
+	TotalTime     int    `db:"total_time"`
+	TotalCount    int    `db:"total_count"`
+}
+
+func GetActivityTypeStats(db *sqlx.DB, startDate, endDate *time.Time) ([]ActivityTypeStats, error) {
+	query := `
+		SELECT 
+			s.activity_id,
+			COALESCE(a.name, 'No Activity') as activity_name,
+			SUM(CASE WHEN s.type = 'pomodoro' THEN s.duration ELSE 0 END) as pomodoro_time,
+			SUM(CASE WHEN s.type = 'pomodoro' THEN 1 ELSE 0 END) as pomodoro_count,
+			SUM(CASE WHEN s.type = 'tracker' THEN s.duration ELSE 0 END) as tracker_time,
+			SUM(CASE WHEN s.type = 'tracker' THEN 1 ELSE 0 END) as tracker_count,
+			SUM(s.duration) as total_time,
+			COUNT(s.id) as total_count
+		FROM sessions s
+		LEFT JOIN activities a ON s.activity_id = a.id
+	`
+	args := []interface{}{}
+
+	if startDate != nil && endDate != nil {
+		startStr := startDate.Format("2006-01-02 15:04:05")
+		endStr := endDate.Format("2006-01-02 15:04:05")
+		query += " WHERE SUBSTR(s.started_at, 1, 19) >= ? AND SUBSTR(s.started_at, 1, 19) < ?"
+		args = append(args, startStr, endStr)
+	}
+
+	query += " GROUP BY s.activity_id, activity_name ORDER BY total_time DESC"
+
+	var stats []ActivityTypeStats
+	err := db.Select(&stats, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
 type TypeStats struct {
 	Type         model.SessionType `db:"type"`
 	TotalTime    int               `db:"total_time"`

@@ -6,16 +6,18 @@ var (
 	TitleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#7FE5D0")).
-			MarginBottom(2).
 			Padding(1, 2).
 			Align(lipgloss.Center)
 
 	SelectedStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#7FE5D0")).
-			Bold(true)
+			Foreground(lipgloss.Color("#000000")).
+			Background(lipgloss.Color("#7FE5D0")).
+			Bold(true).
+			Padding(0, 1)
 
 	NormalStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#C1F0B0"))
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Bold(true)
 
 	HelpStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#8A8A8A")).
@@ -49,7 +51,7 @@ var (
 	PomodoroBreakTitleStyle = lipgloss.NewStyle().
 				Bold(true).
 				Foreground(lipgloss.Color("#99CCFF")).
-				MarginBottom(2).
+				MarginBottom(1).
 				Padding(1, 2).
 				Align(lipgloss.Center)
 )
