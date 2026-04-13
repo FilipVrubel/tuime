@@ -1,2 +1,87 @@
 # tuime
-TUI application for tracking your time
+
+A terminal-based time tracking application with Pomodoro timer support.
+
+## Features
+
+- **Pomodoro Timer**: Customizable work sessions with automatic breaks
+- **Manual Time Tracking**: Track time spent on activities
+- **Activity Management**: Organize your work by activities
+- **Statistics & Analytics**: Visualize your productivity with charts
+- **TUI Interface**: Clean, keyboard-driven terminal UI built with Bubble Tea
+- **Local SQLite Storage**: All data stored locally in your home directory
+
+## Installation
+
+### From Source
+
+```bash
+git clone https://github.com/FilipVrubel/tuime.git
+cd tuime
+go build -o tuime .
+./tuime
+```
+
+### Using Docker
+
+```bash
+# Start the container in detached mode
+docker compose up -d
+
+# Attach to the running container
+docker attach tuime
+
+# Stop the container
+docker compose down
+```
+
+## Configuration
+
+Configuration is stored at `~/.config/tuime/config.json`.
+
+Default settings:
+- Work Duration: 25 minutes
+- Short Break: 5 minutes
+- Long Break: 15 minutes
+- Cycles Before Long Break: 4
+
+Modify settings through the Config view in the application.
+
+## Data Storage
+
+All data is stored locally:
+- Database: `~/.local/share/tuime/tuime.db`
+- Config: `~/.config/tuime/config.json`
+
+## Development
+
+### Prerequisites
+
+- Go 1.24 or higher
+- golangci-lint (optional, for linting)
+
+### Build & Test
+
+```bash
+# Build
+make build
+
+# Run tests
+make test
+
+# Run linter
+make lint
+
+# Format code
+make fmt
+
+# Run all checks
+make check
+
+# Clean build artifacts
+make clean
+```
+
+## License
+
+MIT

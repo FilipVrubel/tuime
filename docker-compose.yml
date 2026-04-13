@@ -1,0 +1,21 @@
+services:
+  tuime:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tuime:latest
+    container_name: tuime
+    stdin_open: true
+    tty: true
+    volumes:
+      - tuime-data:/home/tuime/.local/share/tuime
+      - tuime-config:/home/tuime/.config/tuime
+    environment:
+      - TERM=xterm-256color
+    restart: unless-stopped
+
+volumes:
+  tuime-data:
+    driver: local
+  tuime-config:
+    driver: local
